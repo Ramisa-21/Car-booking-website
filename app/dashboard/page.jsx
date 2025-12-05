@@ -32,10 +32,11 @@ export default function DashboardPage() {
       <nav className="w-full bg-[#C1D2D2] px-12 py-5 flex items-center justify-between">
         
         {/* Logo */}
-        <div className="text-2xl font-bold">RideMate</div>
+        <div className="text-2xl font-bold text-black">RideMate</div>
+
 
         {/* Menu */}
-        <div className="flex items-center gap-10 text-gray-700 font-medium">
+        <div className="flex items-center gap-10 text-black font-medium">
           <a href="#" className="text-pink-600">Ride</a>
           <a href="#">Contact Us</a>
           <a href="#">Help</a>
@@ -66,9 +67,9 @@ export default function DashboardPage() {
         <div className="flex flex-col justify-center">
 
           {/* Heading */}
-          <h1 className="text-5xl font-bold leading-tight mb-8">
+          <h1 className="text-5xl font-bold leading-tight mb-8 text-black">
             Go Anywhere With <br />
-            <span className="text-black">RideMate</span>
+            <span className="font-extrabold">RideMate</span>
           </h1>
 
           {/* Form */}
@@ -87,8 +88,7 @@ export default function DashboardPage() {
             />
             </div>
 
-            {/* Connector dotted line */}
-            <div className="ml-7 border-l-2 border-dotted border-gray-400 h-6"></div>
+            
 
             {/* Dropoff */}
             <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3">
@@ -109,6 +109,7 @@ export default function DashboardPage() {
               {/* Later button */}
               <button
                 type="button"
+                onClick={() => router.push("/schedule-ride")}
                 className="flex items-center gap-2 px-5 py-3 border rounded-xl text-gray-700"
               >
                 📅 Later?
