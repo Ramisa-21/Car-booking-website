@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getDbConnection } from "../../../lib/db";
 import jwt from "jsonwebtoken";
+// 👇 RELATIVE path to app/lib/prisma.ts
+import prisma from "../../../lib/prisma";
 
 export async function POST(request) {
   try {
@@ -14,27 +15,20 @@ export async function POST(request) {
       );
     }
 
-    const conn = await getDbConnection();
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
-    const [rows] = await conn.execute(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
-
-    await conn.end();
-
-    if (rows.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
       );
     }
 
-    const user = rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    const match = await bcrypt.compare(password, user.password);
-
-    if (!match) {
+    if (!isMatch) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
@@ -47,14 +41,13 @@ export async function POST(request) {
       { expiresIn: "7d" }
     );
 
-    // remove password before sending
-    delete user.password;
+    const { password: _pw, ...safeUser } = user;
 
     return NextResponse.json(
       {
         message: "Login successful",
         token,
-        user
+        user: safeUser,
       },
       { status: 200 }
     );
@@ -66,4 +59,3 @@ export async function POST(request) {
     );
   }
 }
-

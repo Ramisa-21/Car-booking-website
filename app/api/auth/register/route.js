@@ -1,32 +1,27 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getDbConnection } from "../../../lib/db";
+// 👇 same relative path as login
+import prisma from "../../../lib/prisma";
 
 export async function POST(request) {
   try {
     const { name, email, password, role, phone } = await request.json();
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Name, email, password and role are required" },
+        { error: "Name, email, and password are required" },
         { status: 400 }
       );
     }
 
-    const finalRole = ["USER", "DRIVER", "ADMIN"].includes(role)
-      ? role
-      : "USER";
+    const allowedRoles = ["USER", "DRIVER", "ADMIN"];
+    const finalRole = allowedRoles.includes(role) ? role : "USER";
 
-    const conn = await getDbConnection();
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
 
-    // check if email exists
-    const [rows] = await conn.execute(
-      "SELECT id FROM users WHERE email = ?",
-      [email]
-    );
-
-    if (rows.length > 0) {
-      await conn.end();
+    if (existing) {
       return NextResponse.json(
         { error: "Email already registered" },
         { status: 400 }
@@ -35,23 +30,22 @@ export async function POST(request) {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const [result] = await conn.execute(
-      "INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)",
-      [name, email, hashed, phone || null, finalRole]
-    );
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashed,
+        phone: phone || null,
+        role: finalRole,
+      },
+    });
 
-    await conn.end();
+    const { password: _pw, ...safeUser } = user;
 
     return NextResponse.json(
       {
         message: "User registered successfully",
-        user: {
-          id: result.insertId,
-          name,
-          email,
-          phone: phone || null,
-          role: finalRole
-        }
+        user: safeUser,
       },
       { status: 201 }
     );
@@ -63,5 +57,3 @@ export async function POST(request) {
     );
   }
 }
-
-

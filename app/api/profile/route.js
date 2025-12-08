@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { getDbConnection } from "../../lib/db";
+// 👇 profile is one folder higher than auth, so one fewer "../"
+import prisma from "../../lib/prisma";
 
-// Helper: get user from JWT in Authorization header
 async function getUserFromRequest(request) {
   const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
 
   const token = authHeader.split(" ")[1];
 
   try {
     const payload = jwt.verify(
       token,
-      process.env.JWT_SECRET || "myprojectsecret123"
+      process.env.JWT_SECRET || "secret123"
     );
     return payload; // { id, role, iat, exp }
   } catch (err) {
@@ -24,7 +22,6 @@ async function getUserFromRequest(request) {
   }
 }
 
-// GET /api/profile  -> return current user info
 export async function GET(request) {
   try {
     const payload = await getUserFromRequest(request);
@@ -32,18 +29,24 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const conn = await getDbConnection();
-    const [rows] = await conn.execute(
-      "SELECT id, name, email, phone, role, createdAt, updatedAt FROM users WHERE id = ?",
-      [payload.id]
-    );
-    await conn.end();
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    if (rows.length === 0) {
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user: rows[0] }, { status: 200 });
+    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     console.error("Profile GET error:", error);
     return NextResponse.json(
@@ -53,7 +56,6 @@ export async function GET(request) {
   }
 }
 
-// PUT /api/profile  -> update name/phone, optional password change
 export async function PUT(request) {
   try {
     const payload = await getUserFromRequest(request);
@@ -64,28 +66,19 @@ export async function PUT(request) {
     const { name, phone, currentPassword, newPassword } =
       await request.json();
 
-    const conn = await getDbConnection();
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+    });
 
-    // Fetch current user
-    const [rows] = await conn.execute(
-      "SELECT * FROM users WHERE id = ?",
-      [payload.id]
-    );
-
-    if (rows.length === 0) {
-      await conn.end();
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const user = rows[0];
-
-    // If password change requested, verify currentPassword then update
     let passwordToSave = user.password;
 
     if (currentPassword && newPassword) {
       const match = await bcrypt.compare(currentPassword, user.password);
       if (!match) {
-        await conn.end();
         return NextResponse.json(
           { error: "Current password is incorrect" },
           { status: 400 }
@@ -95,27 +88,28 @@ export async function PUT(request) {
       passwordToSave = await bcrypt.hash(newPassword, 10);
     }
 
-    const updatedName = name ?? user.name;
-    const updatedPhone = phone ?? user.phone;
-
-    // Update user
-    await conn.execute(
-      "UPDATE users SET name = ?, phone = ?, password = ? WHERE id = ?",
-      [updatedName, updatedPhone, passwordToSave, payload.id]
-    );
-
-    // Return updated data (without password)
-    const [updatedRows] = await conn.execute(
-      "SELECT id, name, email, phone, role, createdAt, updatedAt FROM users WHERE id = ?",
-      [payload.id]
-    );
-
-    await conn.end();
+    const updatedUser = await prisma.user.update({
+      where: { id: payload.id },
+      data: {
+        name: name ?? user.name,
+        phone: phone ?? user.phone,
+        password: passwordToSave,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     return NextResponse.json(
       {
         message: "Profile updated successfully",
-        user: updatedRows[0],
+        user: updatedUser,
       },
       { status: 200 }
     );
