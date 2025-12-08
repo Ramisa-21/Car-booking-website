@@ -146,9 +146,9 @@ export default function ScheduleRidePage() {
       {/* RIGHT IMAGE */}
       <div className="w-1/2 flex items-center justify-center">
         <img
-          src="/5825edcf-3141-4f98-aeb6-f7f77764a353.png"
+          src="\big-black-dog-car_23-2148199107.jpg"
           alt="Trip Illustration"
-          className="h-[600px] object-cover"
+          className="h-[500px] object-cover"
         />
       </div>
     </main>

@@ -84,7 +84,7 @@ export default function DashboardPage() {
                 value={pickup}
                 onChange={(e) => setPickup(e.target.value)}
                 placeholder="Pickup Location"
-                className="w-full bg-transparent outline-none"
+                className="w-full bg-transparent outline-none text-black"
             />
             </div>
 
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 value={dropoff}
                 onChange={(e) => setDropoff(e.target.value)}
                 placeholder="Dropoff Location"
-                className="w-full bg-transparent outline-none"
+                className="w-full bg-transparent outline-none text-black"
             />
             </div>
            
@@ -136,8 +136,7 @@ export default function DashboardPage() {
             className=" shadow-lg mt-20"
           />
 
-          {/* NOTE: This is only a placeholder.  
-              When we add maps API later, we replace this image. */}
+          
         </div>
 
       </div>
