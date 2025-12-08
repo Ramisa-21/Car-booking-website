@@ -1,9 +1,21 @@
-// app/lib/prisma.ts
 import { PrismaClient } from "@prisma/client";
 
-// Avoid multiple instances in development (hot reload)
-const prisma = global.prisma || new PrismaClient();
+// This ensures the PrismaClient is reused in dev (hot reload),
+// and freshly created in production.
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+};
 
-if (process.env.NODE_ENV !== "production") global.prisma = prisma;
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: ["query", "error", "warn"],
+  });
 
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
+
+// ✅ default export so you can `import prisma from "...lib/prisma"`
 export default prisma;
+
