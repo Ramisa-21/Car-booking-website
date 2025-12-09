@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ScheduleRidePage() {
@@ -10,6 +10,16 @@ export default function ScheduleRidePage() {
   const [customTime, setCustomTime] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
+
+  useEffect(() => {
+  const token = localStorage.getItem("authToken") || localStorage.getItem("authToken");
+  const user = localStorage.getItem("authUser");
+
+  // If either token or user info missing, redirect
+  if (!token || !user) {
+    router.push("/login");
+  }
+}, [router]);
 
   const handleTimeChange = (e) => {
     if (e.target.value === "Custom") {
@@ -28,10 +38,19 @@ export default function ScheduleRidePage() {
       return;
     }
 
-    // Save choices to backend API
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("You must be logged in to schedule a ride.");
+      router.push("/login");
+      return;
+    }
+
     await fetch("/api/schedule", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify({
         pickupTime,
         customTime,
@@ -40,13 +59,14 @@ export default function ScheduleRidePage() {
       }),
     });
 
-    // Redirect back to dashboard
     router.push("/dashboard");
   };
 
   return (
     <main className="min-h-screen flex bg-white px-20 py-16">
       
+
+  
       {/* LEFT PANEL */}
       <div className="w-1/2 flex flex-col justify-start pt-6 px-20">
         {/* Heading with inline back button */}

@@ -1,38 +1,84 @@
 import { NextResponse } from "next/server";
 import prisma from "../../lib/prisma";
+import jwt from "jsonwebtoken";
 
-
-
-// POST /api/search
+// POST /api/schedule
 export async function POST(req) {
   try {
-    const { pickup, dropoff } = await req.json();
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Validation
-    if (!pickup || !dropoff) {
+    const token = authHeader.split(" ")[1]; // Bearer <token>
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify JWT and get userId
+    let userId;
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET || "secret123");
+      userId = payload.id;
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const { pickupTime, customTime, pickupLocation, dropoffLocation } = await req.json();
+
+    if (!pickupLocation || !dropoffLocation) {
       return NextResponse.json(
-        { error: "Both pickup and dropoff are required" },
+        { error: "Pickup and dropoff are required" },
         { status: 400 }
       );
     }
 
-    // Create a new RideSearch entry
-    const savedSearch = await prisma.rideSearch.create({
-      data: { pickup, dropoff },
+    // Save ride with userId
+    const savedSchedule = await prisma.scheduledRide.create({
+      data: {
+        pickupTime,
+        customTime: customTime || null,
+        pickupLocation,
+        dropoffLocation,
+        userId,
+      },
     });
 
-    return NextResponse.json({ success: true, data: savedSearch }, { status: 201 });
+    return NextResponse.json({ success: true, data: savedSchedule }, { status: 201 });
   } catch (err) {
     console.error("ERROR:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// Optional GET endpoint to list all searches
-export async function GET() {
+// GET /api/schedule
+export async function GET(req) {
   try {
-    const searches = await prisma.rideSearch.findMany();
-    return NextResponse.json({ success: true, data: searches }, { status: 200 });
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let userId;
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET || "secret123");
+      userId = payload.id;
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // Fetch only rides belonging to the logged-in user
+    const rides = await prisma.scheduledRide.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(rides);
   } catch (err) {
     console.error("ERROR:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

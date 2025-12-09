@@ -1,42 +1,73 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ScheduledTripsPage() {
   const [trips, setTrips] = useState([]);
+  const router = useRouter();
 
+  // ✅ Protect page
   useEffect(() => {
-    fetch("/api/schedule")
-      .then((res) => res.json())
-      .then((data) => setTrips(data));
-  }, []);
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    const fetchTrips = async () => {
+      const res = await fetch("/api/schedule", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      const data = await res.json();
+      setTrips(data.trips || [] );
+    };
+
+    fetchTrips();
+  }, [router]);
 
   const handleDelete = async (id) => {
-    await fetch(`/api/scheduled-trips/${id}`, { method: "DELETE" });
+    const token = localStorage.getItem("authToken");
+    await fetch(`/api/scheduled-trips/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
     setTrips(trips.filter((trip) => trip.id !== id));
   };
 
   const handleEdit = async (trip) => {
     const newPickup = prompt("Edit Pickup Location:", trip.pickupLocation);
     const newDropoff = prompt("Edit Dropoff Location:", trip.dropoffLocation);
-    if (newPickup && newDropoff) {
-      await fetch(`/api/scheduled-trips/${trip.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pickupLocation: newPickup,
-          dropoffLocation: newDropoff,
-        }),
-      });
-      setTrips(
-        trips.map((t) =>
-          t.id === trip.id
-            ? { ...t, pickupLocation: newPickup, dropoffLocation: newDropoff }
-            : t
-        )
-      );
-    }
+    if (!newPickup || !newDropoff) return;
+
+    const token = localStorage.getItem("authToken");
+    await fetch(`/api/scheduled-trips/${trip.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        pickupLocation: newPickup,
+        dropoffLocation: newDropoff,
+      }),
+    });
+
+    setTrips(trips.map(t =>
+      t.id === trip.id ? { ...t, pickupLocation: newPickup, dropoffLocation: newDropoff } : t
+    ));
   };
+
 
   return (
     <main className="min-h-screen p-10 bg-white">

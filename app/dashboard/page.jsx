@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 className="w-full bg-transparent outline-none text-black"
             />
                 className="w-full bg-transparent outline-none text-sm"
-              />
+              /
             </div>
 
             {/* Dropoff */}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                 className="w-full bg-transparent outline-none text-black"
             />
                 className="w-full bg-transparent outline-none text-sm"
-              />
+              /
             </div>
 
             {/* Buttons */}
