@@ -17,6 +17,14 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+
+    // START: CRITICAL ADDITIONS FOR PATH ALIASES
+    "baseUrl": ".", 
+    "paths": {
+      "@/*": ["./*"]
+    },
+    // END: CRITICAL ADDITIONS
+
     "plugins": [
       {
         "name": "next"
@@ -29,7 +37,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "prisma/seed.js"
+    // The line "app/lib/prisma.ts" has been removed, as the alias fixes it automatically
   ],
   "exclude": [
     "node_modules"
