@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,23 +13,43 @@ enum Role {
   ADMIN
 }
 
+// USERS TABLE
 model User {
-  id              Int              @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   name            String
-  email           String   @unique
+  email           String    @unique
   password        String
   phone           String?
-  role            Role     @default(USER)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
+  driverProfile   Driver?
   rideSearches    RideSearch[]
-  scheduledRides  ScheduledRides[]
-
-  @@map("users")
+  scheduledRides  ScheduledRide[]
+  bookings        Booking[]
+  payments        Payment[]
+  ratings         Rating[]
+  notifications   Notification[]
+  supportTickets  SupportTicket[]
+  couponUses      CouponRedemption[]
 }
 
+// DRIVER TABLE (Onboarding + Dashboard)
+model Driver {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  licenseNo     String
+  vehicleModel  String?
+  vehiclePlate  String?
+  approved      Boolean  @default(false)
 
+  user          User     @relation(fields: [userId], references: [id])
+  assignedRides Booking[]
+  ratings       Rating[]
+}
+
+// RIDE SEARCH
 model RideSearch {
   id        Int      @id @default(autoincrement())
   pickup    String
@@ -38,12 +58,10 @@ model RideSearch {
 
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-
-  @@map("rideSearch")
 }
 
-
-model ScheduledRides {
+// SCHEDULED RIDE
+model ScheduledRide {
   id              Int      @id @default(autoincrement())
   pickupTime      String
   customTime      String?
@@ -53,6 +71,100 @@ model ScheduledRides {
 
   userId          Int
   user            User     @relation(fields: [userId], references: [id])
+}
 
-  @@map("scheduledRides")
+// BOOKINGS (Core Ride System)
+model Booking {
+  id              Int      @id @default(autoincrement())
+  pickupLocation  String
+  dropoffLocation String
+  distanceKm      Float?
+  durationMin     Float?
+  price           Float?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userId          Int
+  driverId        Int?
+
+  user            User     @relation(fields: [userId], references: [id])
+  driver          Driver?  @relation(fields: [driverId], references: [id])
+  payment         Payment?
+  rating          Rating?
+}
+
+// PAYMENTS
+model Payment {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  method        String
+  status        String  @default("PENDING")
+  transactionId String?
+  createdAt     DateTime @default(now())
+
+  bookingId     Int      @unique
+  userId        Int
+
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+// RATINGS
+model Rating {
+  id        Int     @id @default(autoincrement())
+  stars     Int
+  review    String?
+
+  bookingId Int    @unique
+  userId    Int
+  driverId  Int?
+
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+  driver    Driver? @relation(fields: [driverId], references: [id])
+}
+
+// COUPONS
+model Coupon {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  discount  Float
+  expiry    DateTime
+  active    Boolean  @default(true)
+
+  redemptions CouponRedemption[]
+}
+
+model CouponRedemption {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  couponId  Int
+  usedAt    DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+}
+
+// NOTIFICATIONS
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  seen      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// SUPPORT TICKETS
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  subject   String
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
