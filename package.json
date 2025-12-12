@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.2",
     "@googlemaps/js-api-loader": "^2.0.2",
     "@prisma/client": "4.16.2",
+    "@react-google-maps/api": "^2.20.7",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
