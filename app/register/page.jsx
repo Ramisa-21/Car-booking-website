@@ -10,7 +10,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     phone: "",
-    role: "USER", // default
+    role: "USER",
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,11 +40,29 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || "Registration failed");
       } else {
-        setSuccessMsg("Registration successful! Redirecting to login...");
-        // redirect to login after a short delay
-        setTimeout(() => {
-          router.push("/login");
-        }, 1500);
+        // ⭐ AUTO LOGIN — Save token + user immediately
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+        if (data.user) {
+          localStorage.setItem("authUser", JSON.stringify(data.user));
+        }
+
+        // ⭐ DRIVER → send to onboarding
+        if (form.role === "DRIVER") {
+          setSuccessMsg(
+            "Basic registration successful! Redirecting for driver setup..."
+          );
+          setTimeout(() => {
+            router.push("/driver-onboard");
+          }, 1500);
+        } else {
+          // Normal user → go to login
+          setSuccessMsg("Registration successful! Redirecting to login...");
+          setTimeout(() => {
+            router.push("/login");
+          }, 1500);
+        }
       }
     } catch (err) {
       console.error(err);

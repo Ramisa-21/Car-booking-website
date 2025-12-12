@@ -2,12 +2,17 @@
   "name": "ridemateplatform",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
+"scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "postinstall": "prisma generate",
+  "seed": "node prisma/seed.js"
+},
+"prisma": {
+  "seed": "node prisma/seed.js"
+},
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@googlemaps/js-api-loader": "^2.0.2",
