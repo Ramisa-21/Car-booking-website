@@ -256,7 +256,7 @@ export default function DriverDashboardPage() {
                         onClick={() => setActiveTab('requests')}
                         className={`text-left px-4 py-2 rounded-lg font-semibold ${activeTab === 'requests' ? 'bg-gray-400 text-white' : 'bg-white text-gray-800 hover:bg-gray-300'}`}
                     >
-                        Dashboard (Ride Requests)
+                        Dashboard
                     </button>
                     <button 
                         onClick={() => setActiveTab('accepted')}
