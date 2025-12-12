@@ -11,6 +11,7 @@ export default function ScheduleRidePage() {
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
 
+<<<<<<< HEAD
   useEffect(() => {
   const token = localStorage.getItem("authToken") || localStorage.getItem("authToken");
   const user = localStorage.getItem("authUser");
@@ -24,6 +25,64 @@ export default function ScheduleRidePage() {
   const handleTimeChange = (e) => {
     if (e.target.value === "Custom") {
       const time = prompt("Enter your preferred pickup time (e.g., 2025-12-06 14:00):");
+=======
+  const [pickupSuggestions, setPickupSuggestions] = useState([]);
+  const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const user = localStorage.getItem("authUser");
+
+    // Redirect if not logged in
+    if (!token || !user) {
+      router.push("/login");
+      return;
+    }
+
+    // Load previously selected locations from Map or previous input
+    const storedPickup = localStorage.getItem("scheduledPickup");
+    const storedDropoff = localStorage.getItem("scheduledDropoff");
+
+    if (storedPickup) setPickupLocation(JSON.parse(storedPickup));
+    if (storedDropoff) setDropoffLocation(JSON.parse(storedDropoff));
+  }, [router]);
+
+  const fetchPhotonSuggestions = async (query, type) => {
+    if (!query) {
+      type === "pickup" ? setPickupSuggestions([]) : setDropoffSuggestions([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=en`
+      );
+      const data = await res.json();
+
+      // Filter results to Dhaka only
+      const dhakaSuggestions = data.features
+        .filter(
+          (f) =>
+            f.properties.city?.toLowerCase().includes("dhaka") ||
+            f.properties.state?.toLowerCase().includes("dhaka") ||
+            f.properties.country?.toLowerCase().includes("bangladesh")
+        )
+        .map((f) => f.properties.name)
+        .filter(Boolean);
+
+      if (type === "pickup") setPickupSuggestions(dhakaSuggestions);
+      else setDropoffSuggestions(dhakaSuggestions);
+    } catch (err) {
+      console.error("Photon error:", err);
+    }
+  };
+
+  const handleTimeChange = (e) => {
+    if (e.target.value === "Custom") {
+      const time = prompt(
+        "Enter your preferred pickup time (e.g., 2025-12-06 14:00):"
+      );
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       if (time) setCustomTime(time);
       setPickupTime(time || "Pickup Now");
     } else {
@@ -45,11 +104,22 @@ export default function ScheduleRidePage() {
       return;
     }
 
+<<<<<<< HEAD
+=======
+    // Save selected locations temporarily
+    localStorage.setItem("scheduledPickup", JSON.stringify(pickupLocation));
+    localStorage.setItem("scheduledDropoff", JSON.stringify(dropoffLocation));
+
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     await fetch("/api/schedule", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+<<<<<<< HEAD
         "Authorization": `Bearer ${token}`
+=======
+        Authorization: `Bearer ${token}`,
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       },
       body: JSON.stringify({
         pickupTime,
@@ -59,17 +129,31 @@ export default function ScheduleRidePage() {
       }),
     });
 
+<<<<<<< HEAD
+=======
+    // Clear temporary storage after saving
+    localStorage.removeItem("scheduledPickup");
+    localStorage.removeItem("scheduledDropoff");
+    localStorage.removeItem("scheduledPickupCoords");
+    localStorage.removeItem("scheduledDropoffCoords");
+
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     router.push("/dashboard");
   };
 
   return (
     <main className="min-h-screen flex bg-white px-20 py-16">
+<<<<<<< HEAD
       
 
   
       {/* LEFT PANEL */}
       <div className="w-1/2 flex flex-col justify-start pt-6 px-20">
         {/* Heading with inline back button */}
+=======
+      {/* LEFT PANEL */}
+      <div className="w-1/2 flex flex-col justify-start pt-6 px-20">
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
         <h1 className="text-4xl font-bold mb-8 text-black flex items-center gap-2">
           <button
             onClick={() => router.push("/dashboard")}
@@ -80,6 +164,7 @@ export default function ScheduleRidePage() {
           Plan Your Trip
         </h1>
 
+<<<<<<< HEAD
 
 {/* Pickup Time */}
 <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3 mb-4">
@@ -121,6 +206,89 @@ export default function ScheduleRidePage() {
     className="w-full bg-transparent outline-none text-black"
   />
 </div>
+=======
+        {/* Pickup Time */}
+        <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3 mb-4">
+          <span className="text-black text-xl">🕓</span>
+          <select
+            value={pickupTime}
+            onChange={handleTimeChange}
+            className="w-full bg-transparent outline-none text-black"
+          >
+            <option value="Pickup Now">Pickup Now</option>
+            <option value="Custom">Set Custom Time</option>
+          </select>
+        </div>
+        {customTime && (
+          <p className="text-gray-600 ml-7 mt-2">Scheduled Time: {customTime}</p>
+        )}
+
+        {/* Pickup Location */}
+        <div className="flex flex-col gap-0 border border-gray-300 rounded-xl px-4 py-3 mb-4 relative">
+          <div className="flex items-center gap-3">
+            <span className="text-black text-xl">⚫</span>
+            <input
+              type="text"
+              placeholder="Pickup Location"
+              value={pickupLocation}
+              onChange={(e) => {
+                setPickupLocation(e.target.value);
+                fetchPhotonSuggestions(e.target.value, "pickup");
+              }}
+              className="w-full bg-transparent outline-none text-black"
+            />
+          </div>
+          {pickupSuggestions.length > 0 && (
+            <ul className="absolute top-full left-0 right-0 bg-white border border-gray-300 z-10 max-h-48 overflow-y-auto text-black">
+              {pickupSuggestions.map((s, i) => (
+                <li
+                  key={i}
+                  onClick={() => {
+                    setPickupLocation(s);
+                    setPickupSuggestions([]);
+                  }}
+                  className="px-3 py-2 hover:bg-gray-200 cursor-pointer"
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Dropoff Location */}
+        <div className="flex flex-col gap-0 border border-gray-300 rounded-xl px-4 py-3 mb-6 relative">
+          <div className="flex items-center gap-3">
+            <span className="text-black text-xl">⬛</span>
+            <input
+              type="text"
+              placeholder="Dropoff Location"
+              value={dropoffLocation}
+              onChange={(e) => {
+                setDropoffLocation(e.target.value);
+                fetchPhotonSuggestions(e.target.value, "dropoff");
+              }}
+              className="w-full bg-transparent outline-none text-black"
+            />
+          </div>
+          {dropoffSuggestions.length > 0 && (
+            <ul className="absolute top-full left-0 right-0 bg-white border border-gray-300 z-10 max-h-48 overflow-y-auto text-black">
+              {dropoffSuggestions.map((s, i) => (
+                <li
+                  key={i}
+                  onClick={() => {
+                    setDropoffLocation(s);
+                    setDropoffSuggestions([]);
+                  }}
+                  className="px-3 py-2 hover:bg-gray-200 cursor-pointer"
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
 
         {/* Continue Button */}
         <button
@@ -129,16 +297,23 @@ export default function ScheduleRidePage() {
         >
           Continue
         </button>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
         {/* ---------------------- OPTIONS ----------------------- */}
         <div className="space-y-3 mt-4 text-black">
           <div
             className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+<<<<<<< HEAD
             onClick={() => router.push("/search-in-different-city")}
           >
             <span>🌐</span> Search in a different city
           </div>
           <div
             className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+=======
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
             onClick={() => router.push("/set-location-on-map")}
           >
             <span>📍</span> Set location on map
@@ -157,11 +332,15 @@ export default function ScheduleRidePage() {
             <span>🗓️</span> Scheduled Trips
           </div>
         </div>
+<<<<<<< HEAD
 
         
       </div>
       
   
+=======
+      </div>
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
 
       {/* RIGHT IMAGE */}
       <div className="w-1/2 flex items-center justify-center">

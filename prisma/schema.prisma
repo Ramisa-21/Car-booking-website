@@ -43,7 +43,10 @@ model Driver {
   vehicleModel  String?
   vehiclePlate  String?
   approved      Boolean  @default(false)
+<<<<<<< HEAD
   blocked       Boolean  @default(false)
+=======
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
   totalEarnings Float    @default(0)
   
   user          User     @relation(fields: [userId], references: [id])

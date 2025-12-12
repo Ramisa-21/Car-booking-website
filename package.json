@@ -14,8 +14,15 @@
   "seed": "node prisma/seed.js"
 },
   "dependencies": {
+<<<<<<< HEAD
     "@googlemaps/js-api-loader": "^2.0.2",
     "@prisma/client": "4.16.2",
+=======
+    "@googlemaps/google-maps-services-js": "^3.4.2",
+    "@googlemaps/js-api-loader": "^2.0.2",
+    "@prisma/client": "4.16.2",
+    "@react-google-maps/api": "^2.20.7",
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2",

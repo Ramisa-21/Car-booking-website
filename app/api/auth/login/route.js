@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+<<<<<<< HEAD
+=======
+// 👇 RELATIVE path to app/lib/prisma.ts
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
 import prisma from "../../../lib/prisma";
 
 export async function POST(request) {
@@ -14,7 +18,10 @@ export async function POST(request) {
       );
     }
 
+<<<<<<< HEAD
     // Find user by email
+=======
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -26,8 +33,13 @@ export async function POST(request) {
       );
     }
 
+<<<<<<< HEAD
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
+=======
+    const isMatch = await bcrypt.compare(password, user.password);
+
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     if (!isMatch) {
       return NextResponse.json(
         { error: "Invalid email or password" },
@@ -35,13 +47,17 @@ export async function POST(request) {
       );
     }
 
+<<<<<<< HEAD
     // Create JWT token
+=======
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET || "secret123",
       { expiresIn: "7d" }
     );
 
+<<<<<<< HEAD
     // Remove password from user object
     const { password: _pw, ...safeUser } = user;
 
@@ -49,10 +65,19 @@ export async function POST(request) {
     const response = NextResponse.json(
       {
         message: "Login successful",
+=======
+    const { password: _pw, ...safeUser } = user;
+
+    return NextResponse.json(
+      {
+        message: "Login successful",
+        token,
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
         user: safeUser,
       },
       { status: 200 }
     );
+<<<<<<< HEAD
 
     // Store JWT token in secure HttpOnly cookie
     response.cookies.set("token", token, {
@@ -64,6 +89,8 @@ export async function POST(request) {
 
     return response;
 
+=======
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

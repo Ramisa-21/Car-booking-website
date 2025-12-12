@@ -30,7 +30,11 @@ export async function POST(req) {
     }
 
     // Save ride with userId
+<<<<<<< HEAD
     const savedSchedule = await prisma.scheduledRides.create({
+=======
+    const savedSchedule = await prisma.scheduledRide.create({
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       data: {
         pickupTime,
         customTime: customTime || null,
@@ -62,7 +66,11 @@ export async function GET(req) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+<<<<<<< HEAD
     const rides = await prisma.scheduledRides.findMany({
+=======
+    const rides = await prisma.scheduledRide.findMany({
+>>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       where: { userId },
       orderBy: { createdAt: "desc" },
     });
