@@ -54,7 +54,7 @@ export default function RegisterPage() {
             "Basic registration successful! Redirecting for driver setup..."
           );
           setTimeout(() => {
-            router.push("/driver-onboarding");
+            router.push("/driver-onboard");
           }, 1500);
         } else {
           // Normal user → go to login
