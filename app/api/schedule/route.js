@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export async function POST(req) {
   try {
-    const authHeader = req.headers.get("authorization"); // read token
+    const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -26,21 +26,20 @@ export async function POST(req) {
     const { pickupTime, customTime, pickupLocation, dropoffLocation } = await req.json();
 
     if (!pickupLocation || !dropoffLocation) {
-      return NextResponse.json({ error: "Pickup and dropoff are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Pickup and dropoff are required" },
+        { status: 400 }
+      );
     }
 
     // Save ride with userId
-<<<<<<< HEAD
-    const savedSchedule = await prisma.scheduledRides.create({
-=======
     const savedSchedule = await prisma.scheduledRide.create({
->>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       data: {
         pickupTime,
         customTime: customTime || null,
         pickupLocation,
         dropoffLocation,
-        userId,  // <--- link ride to logged-in user
+        userId, // link ride to logged-in user
       },
     });
 
@@ -50,7 +49,6 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
 
 export async function GET(req) {
   try {
@@ -66,16 +64,12 @@ export async function GET(req) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-<<<<<<< HEAD
-    const rides = await prisma.scheduledRides.findMany({
-=======
     const rides = await prisma.scheduledRide.findMany({
->>>>>>> 1c1760b550f61ace28accbf13eadb3ff03a99cab
       where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json( {trips: rides});
+    return NextResponse.json({ trips: rides });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: err.message }, { status: 500 });

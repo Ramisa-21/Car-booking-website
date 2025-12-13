@@ -56,7 +56,7 @@ export default function LoginPage() {
         if (role === "DRIVER") {
           router.push("/driver/dashboard");
         } else if (role === "ADMIN") {
-          router.push("/admin/dashboard");
+          router.push("/admin");
         } else {
           router.push("/dashboard");
         }
