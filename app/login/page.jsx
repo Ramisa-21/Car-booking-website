@@ -72,7 +72,6 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[#2b2d2f] flex items-center justify-center px-4">
       <div className="w-full max-w-5xl h-[520px] bg-white rounded shadow-lg overflow-hidden flex">
-        
         {/* LEFT PANEL */}
         <div className="hidden md:flex w-1/2 bg-[#c1d2d2] flex-col justify-between px-10 py-10">
           <div>
@@ -81,15 +80,17 @@ export default function LoginPage() {
             </h1>
             <p className="text-sm text-gray-700 leading-relaxed max-w-md">
               Welcome to Ridemate — your trusted companion for fast, safe, and
-              convenient rides. Whether you're heading to work, meeting friends,
-              or exploring the city, we make travel simple and stress-free. With
-              reliable drivers, transparent pricing, and real-time tracking,
-              Ridemate ensures every journey is smooth from start to finish.
+              convenient rides. Whether you&apos;re heading to work, meeting
+              friends, or exploring the city, we make travel simple and
+              stress-free. With reliable drivers, transparent pricing, and
+              real-time tracking, Ridemate ensures every journey is smooth from
+              start to finish.
             </p>
           </div>
 
           <div className="text-xs text-gray-800 flex items-center gap-3">
             <span>Follow Us:</span>
+            {/* Just simple placeholders for icons */}
             <span className="flex gap-2 text-lg">
               <span>📘</span>
               <span>📸</span>
@@ -114,7 +115,6 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              
               {/* Email */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -147,7 +147,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Remember + Forget + Register */}
+              {/* Remember + Forget */}
               <div className="flex items-center justify-between text-xs text-gray-600">
                 <label className="inline-flex items-center gap-1">
                   <input
@@ -159,23 +159,12 @@ export default function LoginPage() {
                   />
                   <span>Remember Me</span>
                 </label>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="text-[11px] text-gray-500 hover:text-[#c03955]"
-                  >
-                    Forget Password?
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => router.push("/register")}
-                    className="text-[11px] text-gray-500 hover:text-[#c03955]"
-                  >
-                    Register?
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="text-[11px] text-gray-500 hover:text-[#c03955]"
+                >
+                  Forget Password?
+                </button>
               </div>
 
               {/* Login button */}
