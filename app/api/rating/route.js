@@ -1,0 +1,73 @@
+import { NextResponse } from "next/server";
+import prisma from "../../lib/prisma"; 
+
+
+// POST: Create rating
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { bookingId, userId, driverId, stars, review } = body;
+
+    if (!bookingId || !userId || !stars) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const rating = await prisma.rating.create({
+      data: {
+        bookingId,
+        userId,
+        driverId: driverId ?? null,
+        stars,
+        review,
+      },
+    });
+
+    return NextResponse.json(rating, { status: 201 });
+  } catch (error) {
+    console.error("Rating error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to create rating" },
+      { status: 500 }
+    );
+  }
+}
+
+// GET: Get ratings by driverId
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const driverId = searchParams.get("driverId");
+
+    if (!driverId) {
+      return NextResponse.json(
+        { error: "driverId is required" },
+        { status: 400 }
+      );
+    }
+
+    const ratings = await prisma.rating.findMany({
+      where: {
+        driverId: parseInt(driverId),
+      },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        id: "desc",
+      },
+    });
+
+    return NextResponse.json(ratings);
+  } catch (error) {
+    console.error("Fetch ratings error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch ratings" },
+      { status: 500 }
+    );
+  }
+}
