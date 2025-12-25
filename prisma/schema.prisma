@@ -15,37 +15,38 @@ enum Role {
 
 // USERS TABLE
 model User {
-  id              Int       @id @default(autoincrement())
-  name            String
-  email           String    @unique
-  password        String
-  phone           String?
-  role            Role      @default(USER)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  driverProfile   Driver?
-  rideSearches    RideSearch[]
-  scheduledRides  ScheduledRide[]
-  bookings        Booking[]
-  payments        Payment[]
-  ratings         Rating[]
-  notifications   Notification[]
-  supportTickets  SupportTicket[]
-  couponUses      CouponRedemption[]
+  driverProfile  Driver?
+  rideSearches   RideSearch[]
+  scheduledRides ScheduledRide[]
+  bookings       Booking[]
+  payments       Payment[]
+  ratings        Rating[]
+  notifications  Notification[]
+  supportTickets SupportTicket[]
+  couponUses     CouponRedemption[]
+  savedPlaces    SavedPlace[]
 }
 
 // DRIVER TABLE (Onboarding + Dashboard)
 model Driver {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @unique
+  id            Int     @id @default(autoincrement())
+  userId        Int     @unique
   licenseNo     String
   vehicleModel  String?
   vehiclePlate  String?
-  approved      Boolean  @default(false)
-  totalEarnings Float    @default(0)
-  
-  user          User     @relation(fields: [userId], references: [id])
+  approved      Boolean @default(false)
+  totalEarnings Float   @default(0)
+
+  user          User      @relation(fields: [userId], references: [id])
   assignedRides Booking[]
   ratings       Rating[]
 }
@@ -57,8 +58,8 @@ model RideSearch {
   dropoff   String
   createdAt DateTime @default(now())
 
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }
 
 // SCHEDULED RIDE
@@ -70,8 +71,8 @@ model ScheduledRide {
   dropoffLocation String
   createdAt       DateTime @default(now())
 
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }
 
 // BOOKINGS (Core Ride System)
@@ -86,13 +87,13 @@ model Booking {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  userId          Int
-  driverId        Int?
+  userId   Int
+  driverId Int?
 
-  user            User     @relation(fields: [userId], references: [id])
-  driver          Driver?  @relation(fields: [driverId], references: [id])
-  payment         Payment?
-  rating          Rating?
+  user    User     @relation(fields: [userId], references: [id])
+  driver  Driver?  @relation(fields: [driverId], references: [id])
+  payment Payment?
+  rating  Rating?
 }
 
 // PAYMENTS
@@ -100,51 +101,51 @@ model Payment {
   id            Int      @id @default(autoincrement())
   amount        Float
   method        String
-  status        String  @default("PENDING")
+  status        String   @default("PENDING")
   transactionId String?
   createdAt     DateTime @default(now())
 
-  bookingId     Int      @unique
-  userId        Int
+  bookingId Int @unique
+  userId    Int
 
-  booking       Booking   @relation(fields: [bookingId], references: [id])
-  user          User      @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
 }
 
 // RATINGS
 model Rating {
-  id        Int     @id @default(autoincrement())
-  stars     Int
-  review    String?
+  id     Int     @id @default(autoincrement())
+  stars  Int
+  review String?
 
-  bookingId Int    @unique
+  bookingId Int  @unique
   userId    Int
   driverId  Int?
 
-  booking   Booking @relation(fields: [bookingId], references: [id])
-  user      User    @relation(fields: [userId], references: [id])
-  driver    Driver? @relation(fields: [driverId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  driver  Driver? @relation(fields: [driverId], references: [id])
 }
 
 // COUPONS
 model Coupon {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  discount  Float
-  expiry    DateTime
-  active    Boolean  @default(true)
+  id       Int      @id @default(autoincrement())
+  code     String   @unique
+  discount Float
+  expiry   DateTime
+  active   Boolean  @default(true)
 
   redemptions CouponRedemption[]
 }
 
 model CouponRedemption {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  couponId  Int
-  usedAt    DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  couponId Int
+  usedAt   DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  coupon Coupon @relation(fields: [couponId], references: [id])
 }
 
 // NOTIFICATIONS
@@ -154,8 +155,8 @@ model Notification {
   seen      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }
 
 // SUPPORT TICKETS
@@ -166,6 +167,18 @@ model SupportTicket {
   status    String   @default("OPEN")
   createdAt DateTime @default(now())
 
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model SavedPlace {
+  id        Int      @id @default(autoincrement())
+  label     String // e.g., "Home", "Work"
+  address   String
+  coordsLat Float
+  coordsLng Float
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }
