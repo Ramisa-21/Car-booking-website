@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
+// Haversine formula to calculate distance
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 // Map DB booking → UI format
 const mapBookingToRideRequest = (booking) => ({
     rideId: booking.id,
@@ -46,42 +61,86 @@ export async function GET(request) {
             });
         }
 
-        // 2. Fetch all bookings for this driver
-        const allBookings = await prisma.booking.findMany({
+        // 2. Get driver's current location
+        const driverLocation = await prisma.driverLocation.findUnique({
+            where: { driverId: driver.id },
+        });
+
+        // 3. Fetch bookings assigned to this driver (ACCEPTED, ONGOING, COMPLETED)
+        const assignedBookings = await prisma.booking.findMany({
             where: { driverId: driver.id },
             orderBy: { createdAt: "desc" },
         });
 
-        // 3. PENDING requests for this driver only
-        const pendingRequests = allBookings.filter(b => b.status === "PENDING");
+        // 4. Fetch ALL PENDING bookings (not assigned to anyone yet)
+        const allPendingBookings = await prisma.booking.findMany({
+            where: { 
+                status: "PENDING",
+                driverId: null, // Not assigned to any driver yet
+            },
+            orderBy: { createdAt: "desc" },
+        });
 
-        // 4. Accepted + Ongoing rides
-        const acceptedRidesData = allBookings.filter((b) =>
+        // 5. Filter PENDING bookings based on driver's location (within 5km radius)
+        let nearbyPendingBookings = [];
+        
+        if (driverLocation && driverLocation.isOnline) {
+            nearbyPendingBookings = allPendingBookings.filter(booking => {
+                // Skip bookings without coordinates
+                if (!booking.pickupLat || !booking.pickupLng) {
+                    return false;
+                }
+
+                const distance = calculateDistance(
+                    driverLocation.lat,
+                    driverLocation.lng,
+                    parseFloat(booking.pickupLat),
+                    parseFloat(booking.pickupLng)
+                );
+
+                // Show bookings within 5km radius
+                return distance <= 5;
+            });
+        }
+
+        // 6. Get ACCEPTED + ONGOING rides for this driver
+        const acceptedRidesData = assignedBookings.filter((b) =>
             ["ACCEPTED", "ONGOING"].includes(b.status)
         );
 
-        // 5. Completed ride history
-        const completedRides = allBookings.filter(
+        // 7. Get COMPLETED rides for this driver
+        const completedRides = assignedBookings.filter(
             (b) => b.status === "COMPLETED"
         );
 
-        // 6. Calculate total earnings from completed rides
+        // 8. Calculate total earnings from completed rides
         const totalEarnings = completedRides.reduce((sum, booking) => {
             return sum + (booking.price || 0);
         }, 0);
 
-        // 7. Build final response
+        // 9. Build final response
         return NextResponse.json({
             driverName: driver.user.name,
             totalEarnings: totalEarnings,
-
             completedRidesCount: completedRides.length,
-            rideRequestsCount: pendingRequests.length,
+            rideRequestsCount: nearbyPendingBookings.length,
 
-            // Correctly filtered sections:
-            rideRequests: pendingRequests.map(mapBookingToRideRequest),
+            // Show nearby PENDING bookings (not assigned to any driver yet)
+            rideRequests: nearbyPendingBookings.map(mapBookingToRideRequest),
+            
+            // Show this driver's ACCEPTED/ONGOING rides
             acceptedRides: acceptedRidesData.map(mapBookingToRideRequest),
+            
+            // Show this driver's COMPLETED rides
             rideHistory: completedRides.map(mapBookingToRideRequest),
+            
+            // Debug info
+            driverLocation: driverLocation ? {
+                lat: driverLocation.lat,
+                lng: driverLocation.lng,
+                isOnline: driverLocation.isOnline
+            } : null,
+            totalPendingInSystem: allPendingBookings.length,
         });
     } catch (err) {
         console.error("Dashboard Error:", err);
@@ -94,6 +153,7 @@ export async function GET(request) {
                 rideRequests: [],
                 acceptedRides: [],
                 rideHistory: [],
+                error: err.message,
             },
             { status: 500 }
         );
