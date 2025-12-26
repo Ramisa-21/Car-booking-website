@@ -15,6 +15,7 @@ export default function SearchResultsPage() {
   const [couponCode, setCouponCode] = useState("");
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [booking, setBooking] = useState(false);
   const [error, setError] = useState("");
 
   // Auto-calculate price when vehicle type changes
@@ -60,11 +61,58 @@ export default function SearchResultsPage() {
     calculatePrice();
   };
 
-  const handleBookNow = () => {
-    // Save booking to DB with pricing info
-    alert(`Booking confirmed for ${pricing.pricing.finalPrice.toFixed(2)} BDT!`);
-    router.push("/dashboard");
-  };
+const handleBookNow = async () => {
+  try {
+    // Get coordinates from sessionStorage
+    const pickupCoords = JSON.parse(sessionStorage.getItem("pickupCoords") || "{}");
+    const dropoffCoords = JSON.parse(sessionStorage.getItem("dropoffCoords") || "{}");
+
+    if (!pickupCoords.lat || !pickupCoords.lng) {
+      alert("Pickup coordinates missing. Please search again from dashboard.");
+      router.push("/dashboard");
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Please login to book a ride");
+      router.push("/login");
+      return;
+    }
+
+    const res = await fetch("/api/booking/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        pickupLocation: pickup,
+        dropoffLocation: dropoff,
+        pickupLat: pickupCoords.lat,
+        pickupLng: pickupCoords.lng,
+        dropoffLat: dropoffCoords.lat,
+        dropoffLng: dropoffCoords.lng,
+        distanceKm: pricing.route.distanceKm,
+        durationMin: pricing.route.durationMin,
+        price: pricing.pricing.finalPrice,
+        vehicleType: selectedVehicle,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Redirect to waiting page instead of dashboard
+      router.push(`/booking/waiting?bookingId=${data.booking.id}`);
+    } else {
+      alert(`❌ ${data.message}`);
+    }
+  } catch (err) {
+    console.error("Booking error:", err);
+    alert("Failed to create booking. Please try again.");
+  }
+};
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-6">
@@ -211,9 +259,10 @@ export default function SearchResultsPage() {
 
               <button
                 onClick={handleBookNow}
-                className="w-full mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xl py-4 rounded-xl transition-all shadow-lg hover:shadow-2xl transform hover:scale-105"
+                disabled={booking}
+                className="w-full mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xl py-4 rounded-xl transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                🚀 Book Now
+                {booking ? "🔄 Sending to Nearby Drivers..." : "🚀 Book Now - Request Ride"}
               </button>
             </div>
           )}
