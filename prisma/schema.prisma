@@ -46,9 +46,10 @@ model Driver {
   approved      Boolean @default(false)
   totalEarnings Float   @default(0)
 
-  user          User      @relation(fields: [userId], references: [id])
+  user          User            @relation(fields: [userId], references: [id])
   assignedRides Booking[]
   ratings       Rating[]
+  location      DriverLocation? // ← ADD THIS LINE
 }
 
 // RIDE SEARCH
@@ -80,6 +81,10 @@ model Booking {
   id              Int      @id @default(autoincrement())
   pickupLocation  String
   dropoffLocation String
+  pickupLat       Float?
+  pickupLng       Float?
+  dropoffLat      Float?
+  dropoffLng      Float?
   distanceKm      Float?
   durationMin     Float?
   price           Float?
@@ -181,4 +186,18 @@ model SavedPlace {
 
   userId Int
   user   User @relation(fields: [userId], references: [id])
+}
+
+// ==================== ADD THIS NEW MODEL ====================
+// DRIVER LOCATION (GPS Tracking)
+model DriverLocation {
+  id        Int      @id @default(autoincrement())
+  driverId  Int      @unique
+  lat       Float
+  lng       Float
+  address   String?
+  isOnline  Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  driver Driver @relation(fields: [driverId], references: [id])
 }
