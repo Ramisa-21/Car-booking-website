@@ -132,16 +132,24 @@ export default function ScheduleRidePage() {
           <span className="text-black text-xl">🕓</span>
           <select
             value={pickupTime}
-            onChange={handleTimeChange}
+            onChange={(e) => setPickupTime(e.target.value)}
             className="w-full bg-transparent outline-none text-black"
           >
             <option value="Pickup Now">Pickup Now</option>
             <option value="Custom">Set Custom Time</option>
           </select>
         </div>
-        {customTime && (
-          <p className="text-gray-600 ml-7 mt-2">Scheduled Time: {customTime}</p>
+
+        {/* Show datetime picker if Custom is selected */}
+        {pickupTime === "Custom" && (
+          <input
+            type="datetime-local"
+            value={customTime}
+            onChange={(e) => setCustomTime(e.target.value)}
+            className="border px-2 py-1 rounded ml-7 mb-2"
+          />
         )}
+
 
         {/* Pickup Location */}
         <div className="flex flex-col gap-0 border border-gray-300 rounded-xl px-4 py-3 mb-4 relative">
@@ -219,12 +227,7 @@ export default function ScheduleRidePage() {
 
         {/* ---------------------- OPTIONS ----------------------- */}
         <div className="space-y-3 mt-4 text-black">
-          <div
-            className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
-            onClick={() => router.push("/search-in-different-city")}
-          >
-            <span>🌐</span> Search in a different city
-          </div>
+          
           <div
             className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
             onClick={() => router.push("/set-location-on-map")}
@@ -245,6 +248,7 @@ export default function ScheduleRidePage() {
           </div>
         </div>
       </div>
+
 
       {/* RIGHT IMAGE */}
       <div className="w-1/2 flex items-center justify-center">

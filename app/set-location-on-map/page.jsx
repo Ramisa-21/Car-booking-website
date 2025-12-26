@@ -6,6 +6,8 @@ import MapPicker from "../../components/MapPicker";
 
 // Reverse geocoding helper
 async function getAddress(lat, lng) {
+  if (lat == null || lng == null) return "Unknown Location";
+
   try {
     const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
     const data = await res.json();
@@ -21,25 +23,15 @@ export default function SetLocationPage() {
   const [pickup, setPickup] = useState({ coords: null, address: "" });
   const [dropoff, setDropoff] = useState({ coords: null, address: "" });
 
+  // Clear localStorage and reset state on page load
   useEffect(() => {
-    // Load previously stored temporary locations if any
-    const storedPickup = localStorage.getItem("scheduledPickup");
-    const storedDropoff = localStorage.getItem("scheduledDropoff");
-    const storedPickupCoords = localStorage.getItem("scheduledPickupCoords");
-    const storedDropoffCoords = localStorage.getItem("scheduledDropoffCoords");
+    localStorage.removeItem("scheduledPickup");
+    localStorage.removeItem("scheduledDropoff");
+    localStorage.removeItem("scheduledPickupCoords");
+    localStorage.removeItem("scheduledDropoffCoords");
 
-    if (storedPickup && storedPickupCoords) {
-      setPickup({
-        address: JSON.parse(storedPickup),
-        coords: JSON.parse(storedPickupCoords),
-      });
-    }
-    if (storedDropoff && storedDropoffCoords) {
-      setDropoff({
-        address: JSON.parse(storedDropoff),
-        coords: JSON.parse(storedDropoffCoords),
-      });
-    }
+    setPickup({ coords: null, address: "" });
+    setDropoff({ coords: null, address: "" });
   }, []);
 
   const handleConfirm = () => {
@@ -48,13 +40,13 @@ export default function SetLocationPage() {
       return;
     }
 
-    // Save temporary selections for schedule-ride page
+    // Save selections for schedule-ride page
     localStorage.setItem("scheduledPickup", JSON.stringify(pickup.address));
     localStorage.setItem("scheduledDropoff", JSON.stringify(dropoff.address));
     localStorage.setItem("scheduledPickupCoords", JSON.stringify(pickup.coords));
     localStorage.setItem("scheduledDropoffCoords", JSON.stringify(dropoff.coords));
 
-    router.push("/schedule-ride"); // go back to schedule-ride page
+    router.push("/schedule-ride");
   };
 
   return (
@@ -66,10 +58,12 @@ export default function SetLocationPage() {
           pickup={pickup.coords}
           dropoff={dropoff.coords}
           setPickup={async (coords) => {
+            if (!coords) return setPickup({ coords: null, address: "" });
             const address = await getAddress(coords.lat, coords.lng);
             setPickup({ coords, address });
           }}
           setDropoff={async (coords) => {
+            if (!coords) return setDropoff({ coords: null, address: "" });
             const address = await getAddress(coords.lat, coords.lng);
             setDropoff({ coords, address });
           }}

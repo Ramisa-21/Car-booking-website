@@ -1,12 +1,10 @@
-// app/dashboard/page.jsx
-// UPDATED: Now stores coordinates in sessionStorage for pricing page
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MapPicker from "../../components/MapPicker";
 
-// Reverse geocoding via Next.js API route
 async function getAddress(lat, lng) {
   try {
     const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
@@ -26,27 +24,36 @@ export default function DashboardPage() {
   const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [savedPlaces, setSavedPlaces] = useState([]);
 
-  // Auth protection
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("authUser");
-      if (!storedUser) {
+    const loadUserAndPlaces = async () => {
+      try {
+        const storedUser = localStorage.getItem("authUser");
+        if (!storedUser) {
+          router.push("/login");
+          return;
+        }
+        const parsed = JSON.parse(storedUser);
+        if (parsed.role === "DRIVER") {
+          router.push("/driver/dashboard");
+          return;
+        }
+        setUser(parsed);
+
+        const res = await fetch("/api/saved-places", {
+          headers: { Authorization: `Bearer ${parsed.id}` },
+        });
+        const data = await res.json();
+        setSavedPlaces(data);
+      } catch (e) {
+        console.error(e);
         router.push("/login");
-        return;
+      } finally {
+        setLoading(false);
       }
-      const parsed = JSON.parse(storedUser);
-      if (parsed.role === "DRIVER") {
-        router.push("/driver/dashboard");
-        return;
-      }
-      setUser(parsed);
-    } catch (e) {
-      console.error("Failed to read authUser", e);
-      router.push("/login");
-    } finally {
-      setLoading(false);
-    }
+    };
+    loadUserAndPlaces();
   }, [router]);
 
   const handleLogout = () => {
@@ -55,21 +62,22 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // Update pickup/dropoff with coordinates → fetch address
+  const handleSelectSavedPlace = async (place, type) => {
+    const coords = { lat: place.coordsLat, lng: place.coordsLng };
+    const address = place.label || place.address || "Unknown";
+
+    if (type === "pickup") setPickup({ coords, address });
+    else setDropoff({ coords, address });
+  };
+
   const handlePickupChangeFromMap = async (coords) => {
-    if (!coords) {
-      setPickup({ coords: null, address: "" });
-      return;
-    }
+    if (!coords) return setPickup({ coords: null, address: "" });
     const address = await getAddress(coords.lat, coords.lng);
     setPickup({ coords, address });
   };
 
   const handleDropoffChangeFromMap = async (coords) => {
-    if (!coords) {
-      setDropoff({ coords: null, address: "" });
-      return;
-    }
+    if (!coords) return setDropoff({ coords: null, address: "" });
     const address = await getAddress(coords.lat, coords.lng);
     setDropoff({ coords, address });
   };
@@ -80,26 +88,20 @@ export default function DashboardPage() {
       return;
     }
     try {
-      // Bounding box for Dhaka: [minLon, minLat, maxLon, maxLat]
       const bbox = "90.2750,23.6345,90.5340,23.9336";
       const res = await fetch(
         `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&bbox=${bbox}&limit=5`
       );
       const data = await res.json();
-
       const suggestions = data.features.map((f) => ({
         label: f.properties.name
           ? `${f.properties.name}, ${f.properties.city || ""}`.trim()
           : f.properties.city || f.properties.country || "Unknown",
-        coords: {
-          lat: f.geometry.coordinates[1],
-          lng: f.geometry.coordinates[0],
-        },
+        coords: { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] },
       }));
-
       type === "pickup" ? setPickupSuggestions(suggestions) : setDropoffSuggestions(suggestions);
     } catch (err) {
-      console.error("Autocomplete error:", err);
+      console.error(err);
     }
   };
 
@@ -115,49 +117,31 @@ export default function DashboardPage() {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    
-    // Validate addresses
     if (!pickup.address || !dropoff.address) {
       alert("Please select both pickup and dropoff locations.");
       return;
     }
-
-    // Validate coordinates exist
     if (!pickup.coords || !dropoff.coords) {
-      alert("Please ensure both locations have valid coordinates. Try selecting from the suggestions.");
+      alert("Please select valid coordinates.");
       return;
     }
 
-    try {
-      // Optional: Save search to database
-      await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pickup: pickup.coords, dropoff: dropoff.coords }),
-      });
-    } catch (err) {
-      console.error("Search error:", err);
-    }
-
-    // ✅ IMPORTANT: Store coordinates in sessionStorage for pricing page
     sessionStorage.setItem("pickupCoords", JSON.stringify(pickup.coords));
     sessionStorage.setItem("dropoffCoords", JSON.stringify(dropoff.coords));
 
-    // Navigate to search results with addresses in URL
     router.push(
-      `/search-results?pickup=${encodeURIComponent(
-        pickup.address
-      )}&dropoff=${encodeURIComponent(dropoff.address)}`
+      `/search-results?pickup=${encodeURIComponent(pickup.address)}&dropoff=${encodeURIComponent(
+        dropoff.address
+      )}`
     );
   };
 
-  if (loading) {
+  if (loading)
     return (
       <main className="min-h-screen flex items-center justify-center bg-white">
         <p className="text-sm text-gray-600">Loading dashboard...</p>
       </main>
     );
-  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -212,9 +196,6 @@ export default function DashboardPage() {
           {user && (
             <p className="mb-4 text-sm text-gray-700">
               Welcome back, <span className="font-semibold">{user.name}</span>!
-              {user.role === "DRIVER"
-                ? " Ready to accept new rides?"
-                : " Where would you like to go today?"}
             </p>
           )}
           <form onSubmit={handleSearch} className="space-y-4">
@@ -281,7 +262,6 @@ export default function DashboardPage() {
               >
                 📅 Later?
               </button>
-
               <button
                 type="submit"
                 className="flex-1 bg-[#c03955] hover:bg-[#a52d46] text-white font-semibold px-6 py-3 rounded-xl text-sm"
@@ -289,6 +269,40 @@ export default function DashboardPage() {
                 Search Your Ride
               </button>
             </div>
+
+            {/* Saved Places */}
+            {savedPlaces.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl text-black font-semibold mb-3">Your Saved Places</h2>
+                <ul className="flex flex-col gap-2">
+                  {savedPlaces.map((place) => (
+                    <li
+                      key={place.id}
+                      className="border p-3 rounded-xl flex flex-col gap-1 hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-black">{place.label}</span>
+                        <div className="flex gap-2">
+                          <button
+                            className="text-sm text-blue-600 hover:underline"
+                            onClick={() => handleSelectSavedPlace(place, "pickup")}
+                          >
+                            Set as Pickup
+                          </button>
+                          <button
+                            className="text-sm text-green-600 hover:underline"
+                            onClick={() => handleSelectSavedPlace(place, "dropoff")}
+                          >
+                            Set as Dropoff
+                          </button>
+                        </div>
+                      </div>
+                      <span className="text-gray-600">{place.address}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </form>
         </div>
 
@@ -299,6 +313,7 @@ export default function DashboardPage() {
             dropoff={dropoff.coords}
             setPickup={handlePickupChangeFromMap}
             setDropoff={handleDropoffChangeFromMap}
+            mode="ride"
           />
         </div>
       </div>

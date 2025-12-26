@@ -7,7 +7,7 @@ export default function ScheduledTripsPage() {
   const [trips, setTrips] = useState([]);
   const router = useRouter();
 
-  // ✅ Protect page
+  //  Protect page
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -68,18 +68,26 @@ export default function ScheduledTripsPage() {
     ));
   };
 
-
   return (
-    <main className="min-h-screen p-10 bg-white">
-      <h1 className="text-3xl font-bold mb-6 text-black">Scheduled Trips</h1>
+    <main className="min-h-screen p-10 bg-white text-black">
+      {/* Back Button + Title */}
+      <div className="flex items-center mb-6 gap-4">
+        <button
+          onClick={() => router.back()} // Goes to previous page
+          className="text-black hover:text-gray-700 text-3xl font-bold"
+        >
+          &lt;
+        </button>
+        <h1 className="text-3xl font-bold">Scheduled Trips</h1>
+      </div>
 
       {trips.length === 0 ? (
-        <p className="text-black">No scheduled trips yet.</p>
+        <p>No scheduled trips yet.</p>
       ) : (
         <ul className="space-y-4">
           {trips.map((trip) => (
             <li key={trip.id} className="border p-4 rounded-xl flex justify-between items-center">
-              <div className="text-black">
+              <div>
                 <p><strong>Pickup:</strong> {trip.pickupLocation}</p>
                 <p><strong>Dropoff:</strong> {trip.dropoffLocation}</p>
                 <p><strong>Time:</strong> {trip.customTime || trip.pickupTime}</p>

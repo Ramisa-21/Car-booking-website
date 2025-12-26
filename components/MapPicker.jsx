@@ -5,7 +5,13 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 
 const containerStyle = { width: "100%", height: "500px" };
 
-export default function MapPicker({ pickup, dropoff, setPickup, setDropoff }) {
+export default function MapPicker({
+  pickup,
+  dropoff,
+  setPickup,
+  setDropoff,
+  pickupOnly = false, // default false
+}) {
   const [pickupMarker, setPickupMarker] = useState(pickup || null);
   const [dropoffMarker, setDropoffMarker] = useState(dropoff || null);
 
@@ -18,26 +24,41 @@ export default function MapPicker({ pickup, dropoff, setPickup, setDropoff }) {
 
   const handleMapClick = (e) => {
     const latLng = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+
+    if (pickupOnly) {
+      setPickupMarker(latLng);
+      if (setPickup) setPickup(latLng);
+      return;
+    }
+
+    // Two-marker mode
     if (!pickupMarker) {
       setPickupMarker(latLng);
-      setPickup(latLng);
-    } else if (!dropoffMarker) {
-      setDropoffMarker(latLng);
-      setDropoff(latLng);
+      if (setPickup) setPickup(latLng);
+      return;
     }
+
+    setDropoffMarker(latLng);
+    if (setDropoff) setDropoff(latLng);
   };
 
   const handleClear = () => {
-    setPickupMarker(null);
-    setDropoffMarker(null);
-    setPickup(null);
-    setDropoff(null);
+    if (pickupOnly) {
+      setPickupMarker(null);
+      if (setPickup) setPickup(null);
+    } else {
+      setPickupMarker(null);
+      setDropoffMarker(null);
+      if (setPickup) setPickup(null);
+      if (setDropoff) setDropoff(null);
+    }
   };
 
+  // Sync markers with props
   useEffect(() => {
-    if (pickup) setPickupMarker(pickup);
-    if (dropoff) setDropoffMarker(dropoff);
-  }, [pickup, dropoff]);
+    setPickupMarker(pickup || null);
+    if (!pickupOnly) setDropoffMarker(dropoff || null);
+  }, [pickup, dropoff, pickupOnly]);
 
   if (!isLoaded) return <p>Loading map...</p>;
 
@@ -56,7 +77,7 @@ export default function MapPicker({ pickup, dropoff, setPickup, setDropoff }) {
         onClick={handleMapClick}
       >
         {pickupMarker && <Marker position={pickupMarker} label="P" />}
-        {dropoffMarker && <Marker position={dropoffMarker} label="D" />}
+        {!pickupOnly && dropoffMarker && <Marker position={dropoffMarker} label="D" />}
       </GoogleMap>
     </div>
   );

@@ -9,7 +9,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1]; // Bearer <token>
+    const token = authHeader.split(" ")[1]; 
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -39,7 +39,7 @@ export async function POST(req) {
         customTime: customTime || null,
         pickupLocation,
         dropoffLocation,
-        userId, // link ride to logged-in user
+        userId,
       },
     });
 
