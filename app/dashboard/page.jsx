@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,6 +24,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savedPlaces, setSavedPlaces] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [showBookings, setShowBookings] = useState(false);
 
   useEffect(() => {
     const loadUserAndPlaces = async () => {
@@ -41,11 +42,22 @@ export default function DashboardPage() {
         }
         setUser(parsed);
 
-        const res = await fetch("/api/saved-places", {
+        // Load saved places
+        const placesRes = await fetch("/api/saved-places", {
           headers: { Authorization: `Bearer ${parsed.id}` },
         });
-        const data = await res.json();
-        setSavedPlaces(data);
+        const placesData = await placesRes.json();
+        setSavedPlaces(placesData);
+
+        // Load user bookings
+        const token = localStorage.getItem("authToken");
+        const bookingsRes = await fetch("/api/user/bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const bookingsData = await bookingsRes.json();
+        if (bookingsData.success) {
+          setBookings(bookingsData.bookings);
+        }
       } catch (e) {
         console.error(e);
         router.push("/login");
@@ -136,6 +148,17 @@ export default function DashboardPage() {
     );
   };
 
+  const getStatusBadge = (status) => {
+    const styles = {
+      PENDING: "bg-yellow-100 text-yellow-800",
+      ACCEPTED: "bg-blue-100 text-blue-800",
+      ONGOING: "bg-green-100 text-green-800",
+      COMPLETED: "bg-gray-100 text-gray-800",
+      CANCELLED: "bg-red-100 text-red-800",
+    };
+    return styles[status] || "bg-gray-100 text-gray-800";
+  };
+
   if (loading)
     return (
       <main className="min-h-screen flex items-center justify-center bg-white">
@@ -155,6 +178,14 @@ export default function DashboardPage() {
         </div>
         <div className="hidden md:flex items-center gap-8 text-black font-medium">
           <button className="text-pink-600">Ride</button>
+          <button onClick={() => setShowBookings(!showBookings)}>
+            My Bookings
+            {bookings.length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                {bookings.length}
+              </span>
+            )}
+          </button>
           <button>Contact Us</button>
           <button>Help</button>
         </div>
@@ -185,6 +216,74 @@ export default function DashboardPage() {
         </div>
       </nav>
 
+      {/* MY BOOKINGS SECTION (TOGGLE) */}
+      {showBookings && (
+        <div className="bg-blue-50 border-b border-blue-200 px-6 md:px-20 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-black">My Bookings</h2>
+            <button
+              onClick={() => setShowBookings(false)}
+              className="text-blue-600 hover:text-blue-800 font-semibold"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          {bookings.length === 0 ? (
+            <p className="text-gray-600 text-center py-8">No bookings yet. Book your first ride!</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  onClick={() => router.push(`/booking/waiting?bookingId=${booking.id}`)}
+                  className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition border-l-4 border-blue-500"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-bold text-gray-800">Booking #{booking.id}</span>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
+                        booking.status
+                      )}`}
+                    >
+                      {booking.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-600">📍</span>
+                      <p className="text-gray-700 line-clamp-1">{booking.pickupLocation}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-red-600">🎯</span>
+                      <p className="text-gray-700 line-clamp-1">{booking.dropoffLocation}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                    <span className="text-gray-600 text-sm">
+                      {new Date(booking.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="text-green-600 font-bold">
+                      {booking.price ? `${booking.price.toFixed(2)} BDT` : "N/A"}
+                    </span>
+                  </div>
+
+                  {booking.driver && (
+                    <div className="mt-3 pt-3 border-t text-xs text-gray-600">
+                      <p>
+                        🚗 {booking.driver.name} • {booking.driver.vehicleModel}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* MAIN SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-6 md:px-20 py-12 md:py-16 items-center">
         {/* LEFT PANEL */}
@@ -198,6 +297,30 @@ export default function DashboardPage() {
               Welcome back, <span className="font-semibold">{user.name}</span>!
             </p>
           )}
+
+          {/* Quick Access to Recent Booking */}
+          {bookings.length > 0 && (
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold">RECENT BOOKING</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">
+                    Booking #{bookings[0].id} • {bookings[0].status}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                    {bookings[0].pickupLocation} → {bookings[0].dropoffLocation}
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push(`/booking/waiting?bookingId=${bookings[0].id}`)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSearch} className="space-y-4">
             {/* Pickup */}
             <div className="relative">
