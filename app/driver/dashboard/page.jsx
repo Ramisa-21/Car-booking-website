@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import NotificationBell from "@/components/NotificationBell";
-
 
 // Placeholder for the Table component
 const RideTable = ({ title, data, showActions = false, actionType, onAction, processingRides }) => (
@@ -53,22 +51,17 @@ const RideTable = ({ title, data, showActions = false, actionType, onAction, pro
                                 {showActions && (
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         {actionType === 'request' && (
-                                            <>
-                                                <button 
-                                                    onClick={() => onAction(ride.rideId, 'accept')}
-                                                    disabled={processingRides.has(ride.rideId)}
-                                                    className={`mr-4 font-semibold ${
-                                                        processingRides.has(ride.rideId) 
-                                                            ? 'text-gray-400 cursor-not-allowed' 
-                                                            : 'text-green-600 hover:text-green-900'
-                                                    }`}
-                                                >
-                                                    {processingRides.has(ride.rideId) ? 'Processing...' : 'ACCEPT'}
-                                                </button>
-                                                <button className="text-red-600 hover:text-red-900 font-semibold">
-                                                    REJECT
-                                                </button>
-                                            </>
+                                            <button 
+                                                onClick={() => onAction(ride.rideId, 'accept')}
+                                                disabled={processingRides.has(ride.rideId)}
+                                                className={`mr-4 font-semibold ${
+                                                    processingRides.has(ride.rideId) 
+                                                        ? 'text-gray-400 cursor-not-allowed' 
+                                                        : 'text-green-600 hover:text-green-900'
+                                                }`}
+                                            >
+                                                {processingRides.has(ride.rideId) ? 'Processing...' : 'ACCEPT'}
+                                            </button>
                                         )}
                                         {actionType === 'accepted' && (
                                             <button 
@@ -156,27 +149,29 @@ export default function DriverDashboardPage() {
         }
     };
 
-    // Get current GPS location
+    // Get current GPS location - FIXED VERSION
     const getCurrentGPSLocation = () => {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error("Geolocation not supported"));
+                reject(new Error("Geolocation not supported by this browser"));
                 return;
             }
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    console.log("GPS Success:", position.coords);
                     resolve({
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
                     });
                 },
                 (error) => {
+                    console.error("GPS Error:", error);
                     reject(error);
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 15000,
                     maximumAge: 0
                 }
             );
@@ -215,8 +210,11 @@ export default function DriverDashboardPage() {
                 }),
             });
 
+            const result = await res.json();
+            console.log("Location update result:", result);
+
             if (!res.ok) {
-                console.error("Failed to update location in DB");
+                console.error("Failed to update location in DB:", result);
             }
         } catch (err) {
             console.error("Update location error:", err);
@@ -231,14 +229,20 @@ export default function DriverDashboardPage() {
             setLocationError("");
 
             try {
+                console.log("Attempting to get GPS location...");
+                
                 // Get initial location
                 const coords = await getCurrentGPSLocation();
+                console.log("Got coordinates:", coords);
+                
                 const address = await reverseGeocode(coords.lat, coords.lng);
+                console.log("Got address:", address);
                 
                 setCurrentLocation({ ...coords, address });
                 await updateLocationInDB(coords.lat, coords.lng, address, true);
                 
                 setIsOnline(true);
+                alert("✅ GPS location set successfully! You are now online.");
                 
                 // Start periodic location updates every 30 seconds
                 locationIntervalRef.current = setInterval(async () => {
@@ -262,13 +266,21 @@ export default function DriverDashboardPage() {
 
             } catch (error) {
                 console.error("GPS Error:", error);
+                let errorMessage = "Failed to get location. ";
+                
                 if (error.code === 1) {
-                    setLocationError("Location permission denied. Please enable GPS.");
+                    errorMessage = "Location permission denied. Please allow location access in your browser settings.";
                 } else if (error.code === 2) {
-                    setLocationError("Location unavailable. Check your device settings.");
+                    errorMessage = "Location unavailable. Please check if location services are enabled on your device.";
+                } else if (error.code === 3) {
+                    errorMessage = "Location request timed out. Please try again.";
+                } else if (error.message) {
+                    errorMessage = error.message;
                 } else {
-                    setLocationError("Failed to get location. Try again.");
+                    errorMessage = "Failed to get location. Please try manual location or check your device settings.";
                 }
+                
+                setLocationError(errorMessage);
             } finally {
                 setLocationLoading(false);
             }
@@ -487,10 +499,6 @@ export default function DriverDashboardPage() {
                             </span>
                         </div>
                     )}
-                    
-                    {/* 🔔 DRIVER NOTIFICATION BELL */}
-                    <NotificationBell />
-                    
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition duration-150"
