@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const ratingText = {
@@ -23,42 +23,49 @@ export default function RatingsPage() {
   const [stars, setStars] = useState(0);
   const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
   const router = useRouter();
+
+  // Get bookingId from query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("bookingId");
+    if (id) setBookingId(Number(id));
+  }, []);
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
-      prev.includes(tag)
-        ? prev.filter((t) => t !== tag)
-        : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
   const handleSubmit = async () => {
-    if (!stars) return;
+    if (!stars || !bookingId) {
+      alert("Missing rating or booking info!");
+      return;
+    }
 
     setLoading(true);
-
     try {
       const res = await fetch("/api/rating", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bookingId,
-          userId,    
-          driverId,
+          bookingId, // ✅ Must include
           stars,
           review: selectedTags.join(", "),
         }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to submit rating");
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to submit rating");
       }
 
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
-      alert("Failed to submit rating");
+      alert(`Failed to submit rating: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -66,7 +73,6 @@ export default function RatingsPage() {
 
   return (
     <div className="relative min-h-screen">
-      {/* Full-screen Map */}
       <div className="fixed inset-0 z-0">
         <iframe
           className="absolute inset-0 w-full h-full"
@@ -75,11 +81,8 @@ export default function RatingsPage() {
         />
       </div>
 
-      {/* Overlay with Rating Card */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl w-[380px] p-6 relative">
-
-          {/* Close */}
           <button
             onClick={() => router.push("/dashboard")}
             className="absolute top-4 left-4 text-xl text-gray-400"
@@ -91,7 +94,6 @@ export default function RatingsPage() {
             Rating
           </h2>
 
-          {/* Avatar */}
           <div className="flex justify-center mb-4">
             <img
               src="/driver image.jpg"
@@ -100,7 +102,6 @@ export default function RatingsPage() {
             />
           </div>
 
-          {/* Stars */}
           <div className="flex justify-center gap-1 mb-2">
             {[1, 2, 3, 4, 5].map((s) => (
               <button
@@ -121,11 +122,7 @@ export default function RatingsPage() {
 
           <hr className="mb-4" />
 
-          <p className="text-sm text-black mb-2">
-            What could be improved?
-          </p>
-
-          {/* Tags */}
+          <p className="text-sm text-black mb-2">What could be improved?</p>
           <div className="flex flex-wrap gap-2 mb-5">
             {improvementTags.map((tag) => {
               const active = selectedTags.includes(tag);
@@ -133,12 +130,11 @@ export default function RatingsPage() {
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1 rounded-full text-sm border
-                    ${
-                      active
-                        ? "bg-rose-600 text-white border-rose-600"
-                        : "border-gray-300 text-gray-700"
-                    }`}
+                  className={`px-3 py-1 rounded-full text-sm border ${
+                    active
+                      ? "bg-rose-600 text-white border-rose-600"
+                      : "border-gray-300 text-gray-700"
+                  }`}
                 >
                   {tag}
                 </button>
@@ -146,17 +142,15 @@ export default function RatingsPage() {
             })}
           </div>
 
-          {/* Other */}
           <div className="flex justify-center mb-3">
             <button
-              onClick={() => router.push("/ratings/other")}
+              onClick={() => router.push(`/ratings/other?bookingId=${bookingId}`)}
               className="bg-rose-600 text-white px-6 py-2 rounded-full"
             >
               Other
             </button>
           </div>
 
-          {/* Submit */}
           <div className="flex justify-center">
             <button
               onClick={handleSubmit}
@@ -166,7 +160,6 @@ export default function RatingsPage() {
               {loading ? "Submitting..." : "Submit"}
             </button>
           </div>
-
         </div>
       </div>
     </div>
