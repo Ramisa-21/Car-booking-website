@@ -1,27 +1,51 @@
 import { NextResponse } from "next/server";
-import prisma from "../../lib/prisma"; 
-
+import prisma from "../../lib/prisma";
 
 // POST: Create rating
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { bookingId, userId, driverId, stars, review } = body;
+    const { bookingId, stars, review } = body;
 
-    if (!bookingId || !userId || !stars) {
+    if (!bookingId || !stars) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    // Find the booking first
+    const booking = await prisma.booking.findUnique({
+      where: { id: Number(bookingId) },
+    });
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if this booking already has a rating
+    const existingRating = await prisma.rating.findUnique({
+      where: { bookingId: Number(bookingId) },
+    });
+
+    if (existingRating) {
+      return NextResponse.json(
+        { error: "Rating already exists for this booking" },
+        { status: 400 }
+      );
+    }
+
+    // Create rating using booking info
     const rating = await prisma.rating.create({
       data: {
-        bookingId,
-        userId,
-        driverId: driverId ?? null,
+        bookingId: booking.id,
+        userId: booking.userId,       // ✅ automatically from booking
+        driverId: booking.driverId ?? null, // optional
         stars,
-        review,
+        review: review ?? "",
       },
     });
 
@@ -71,3 +95,4 @@ export async function GET(req) {
     );
   }
 }
+

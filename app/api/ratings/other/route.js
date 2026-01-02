@@ -1,42 +1,39 @@
-import prisma from "../../../lib/prisma"; 
-
+import prisma from "../../../lib/prisma";
 
 export async function POST(req) {
   try {
-    const { bookingId, userId, driverId, stars, review } = await req.json();
+    const { bookingId, stars, review } = await req.json();
 
     // Validate required fields
-    if (!bookingId || !userId || !stars) {
+    if (!bookingId || !stars) {
       return new Response(
-        JSON.stringify({ error: "bookingId, userId, and stars are required" }),
+        JSON.stringify({ error: "bookingId and stars are required" }),
         { status: 400 }
       );
     }
 
-    // Optional: Check if booking exists
-    const bookingExists = await prisma.booking.findUnique({
-      where: { id: bookingId },
+    // Find the booking to get userId and driverId
+    const booking = await prisma.booking.findUnique({
+      where: { id: Number(bookingId) },
     });
 
-    if (!bookingExists) {
+    if (!booking) {
       return new Response(
         JSON.stringify({ error: `Booking with id ${bookingId} does not exist` }),
         { status: 404 }
       );
     }
 
-    // Optional: Check if driver exists (if provided)
-    if (driverId) {
-      const driverExists = await prisma.driver.findUnique({
-        where: { id: driverId },
-      });
+    // Prevent duplicate rating (bookingId is unique in Rating)
+    const existingRating = await prisma.rating.findUnique({
+      where: { bookingId: Number(bookingId) },
+    });
 
-      if (!driverExists) {
-        return new Response(
-          JSON.stringify({ error: `Driver with id ${driverId} does not exist` }),
-          { status: 404 }
-        );
-      }
+    if (existingRating) {
+      return new Response(
+        JSON.stringify({ error: "Rating already exists for this booking" }),
+        { status: 400 }
+      );
     }
 
     // Create rating
@@ -44,9 +41,9 @@ export async function POST(req) {
       data: {
         stars,
         review: review || "",
-        bookingId,
-        userId,
-        driverId: driverId || null,
+        bookingId: booking.id,
+        userId: booking.userId,               // ✅ get userId from booking
+        driverId: booking.driverId || null,   // optional
       },
     });
 
