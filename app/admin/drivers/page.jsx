@@ -37,6 +37,8 @@ export default function DriversAdminPage() {
               <th className="p-3 border">Name</th>
               <th className="p-3 border">Email</th>
               <th className="p-3 border">License</th>
+              <th className="p-3 border">Vehicle Model</th>
+              <th className="p-3 border">Vehicle Plate</th>
               <th className="p-3 border">Approved</th>
               <th className="p-3 border">Actions</th>
             </tr>
@@ -49,6 +51,8 @@ export default function DriversAdminPage() {
                 <td className="p-3 border">{d.user?.name}</td>
                 <td className="p-3 border">{d.user?.email}</td>
                 <td className="p-3 border">{d.licenseNo}</td>
+                <td className="p-3 border">{d.vehicleModel || "-"}</td>
+                <td className="p-3 border">{d.vehiclePlate || "-"}</td>
 
                 <td className="p-3 border">
                   {d.approved ? (

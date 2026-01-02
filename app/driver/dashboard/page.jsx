@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import NotificationBell from "@/components/NotificationBell";
+
 
 // Placeholder for the Table component
 const RideTable = ({ title, data, showActions = false, actionType, onAction, processingRides }) => (
@@ -485,6 +487,10 @@ export default function DriverDashboardPage() {
                             </span>
                         </div>
                     )}
+                    
+                    {/* 🔔 DRIVER NOTIFICATION BELL */}
+                    <NotificationBell />
+                    
                     <button
                         onClick={handleLogout}
                         className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition duration-150"

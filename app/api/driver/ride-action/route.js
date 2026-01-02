@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { notifyUser } from "@/app/lib/notify";
 
 export async function POST(request) {
     try {
@@ -27,7 +28,7 @@ export async function POST(request) {
         }
 
         // Handle ACCEPT action
-        if (action === 'accept') {
+        if (action === "accept") {
             const booking = await prisma.booking.findUnique({
                 where: { id: Number(rideId) },
             });
@@ -39,7 +40,7 @@ export async function POST(request) {
                 );
             }
 
-            if (booking.status !== 'PENDING') {
+            if (booking.status !== "PENDING") {
                 return NextResponse.json(
                     { message: "Ride is not in PENDING status" },
                     { status: 400 }
@@ -49,11 +50,17 @@ export async function POST(request) {
             // Update booking status to ACCEPTED
             await prisma.booking.update({
                 where: { id: Number(rideId) },
-                data: { 
-                    status: 'ACCEPTED',
+                data: {
+                    status: "ACCEPTED",
                     driverId: driver.id,
                 },
             });
+
+            // 🔔 Notify USER: Ride accepted
+            await notifyUser(
+                booking.userId,
+                "✅ Your ride has been accepted. Driver is on the way!"
+            );
 
             return NextResponse.json({
                 message: "Ride accepted successfully!",
@@ -62,7 +69,7 @@ export async function POST(request) {
         }
 
         // Handle COMPLETE action
-        if (action === 'complete') {
+        if (action === "complete") {
             const booking = await prisma.booking.findUnique({
                 where: { id: Number(rideId) },
             });
@@ -74,7 +81,7 @@ export async function POST(request) {
                 );
             }
 
-            if (!['ACCEPTED', 'ONGOING'].includes(booking.status)) {
+            if (!["ACCEPTED", "ONGOING"].includes(booking.status)) {
                 return NextResponse.json(
                     { message: "Ride must be ACCEPTED or ONGOING to complete" },
                     { status: 400 }
@@ -84,10 +91,16 @@ export async function POST(request) {
             // Update booking status to COMPLETED
             await prisma.booking.update({
                 where: { id: Number(rideId) },
-                data: { 
-                    status: 'COMPLETED',
+                data: {
+                    status: "COMPLETED",
                 },
             });
+
+            // 🔔 Notify USER: Ride completed
+            await notifyUser(
+                booking.userId,
+                "🏁 Your ride is completed. Thank you for riding with RideMate!"
+            );
 
             // Update driver's total earnings
             const ridePrice = booking.price || 0;

@@ -1,22 +1,40 @@
 import prisma from "@/app/lib/prisma";
 
 export async function GET() {
-  const coupons = await prisma.coupon.findMany({
-    orderBy: { id: "asc" },
-  });
-  return Response.json(coupons);
+  try {
+    const coupons = await prisma.coupon.findMany({
+      orderBy: { id: "asc" },
+    });
+
+    return Response.json(coupons);
+  } catch (err) {
+    console.error("LOAD COUPONS ERROR:", err);
+    return Response.json(
+      { error: "Failed to load coupons" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req) {
-  const { code, discount, expiry } = await req.json();
+  try {
+    const { code, discount, expiry } = await req.json();
 
-  const coupon = await prisma.coupon.create({
-    data: {
-      code,
-      discount: Number(discount),
-      expiry: new Date(expiry),
-    },
-  });
+    const coupon = await prisma.coupon.create({
+      data: {
+        code: code.toUpperCase(), // ✅ FORCE CAPITAL LETTER
+        discount: Number(discount),
+        expiry: new Date(expiry),
+        active: true,
+      },
+    });
 
-  return Response.json({ success: true, coupon });
+    return Response.json({ success: true, coupon });
+  } catch (err) {
+    console.error("CREATE COUPON ERROR:", err);
+    return Response.json(
+      { error: "Failed to create coupon" },
+      { status: 500 }
+    );
+  }
 }

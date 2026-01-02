@@ -43,9 +43,9 @@ export default function RatingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bookingId: 2, // TEMP (connect later)
-          userId: 1,    // TEMP
-          driverId: 1,  // TEMP
+          bookingId,
+          userId,    
+          driverId,
           stars,
           review: selectedTags.join(", "),
         }),

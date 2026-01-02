@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MapPicker from "../../components/MapPicker";
+import NotificationBell from "../../components/NotificationBell";
 
 async function getAddress(lat, lng) {
   try {
@@ -185,11 +186,18 @@ export default function DashboardPage() {
                 {bookings.length}
               </span>
             )}
+            </button>
+
+          <button onClick={() => router.push("/support")}>
+            Contact Us
           </button>
-          <button>Contact Us</button>
+
           <button>Help</button>
         </div>
         <div className="flex items-center gap-4">
+          {/* 🔔 Notification Bell */}
+          <NotificationBell />
+        
           <div className="hidden sm:flex items-center gap-1 text-gray-700 text-sm">
             🌐 <span>EN</span>
           </div>

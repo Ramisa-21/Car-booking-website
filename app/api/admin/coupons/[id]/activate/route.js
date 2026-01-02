@@ -5,17 +5,18 @@ export async function PATCH(req, context) {
     const { params } = context;
     const { id } = await params;
 
-    const driverId = parseInt(id, 10);
+    const couponId = parseInt(id, 10);
 
-    await prisma.driver.delete({
-      where: { id: driverId },
+    await prisma.coupon.update({
+      where: { id: couponId },
+      data: { active: true },
     });
 
     return Response.json({ success: true });
   } catch (err) {
-    console.error("REJECT DRIVER ERROR:", err);
+    console.error("ACTIVATE COUPON ERROR:", err);
     return Response.json(
-      { error: "Failed to reject driver" },
+      { error: "Failed to activate coupon" },
       { status: 500 }
     );
   }

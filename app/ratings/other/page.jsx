@@ -24,10 +24,7 @@ export default function OtherRatingPage() {
 
     setLoading(true);
     try {
-      const bookingId = 2; 
-      const userId = 1; 
-      const driverId = 1;
-
+      
       const res = await fetch("/api/ratings/other", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

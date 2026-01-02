@@ -1,17 +1,23 @@
 import prisma from "@/app/lib/prisma";
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
   try {
-    const id = Number(params.id);
+    const { params } = context;
+    const { id } = await params; // ✅ REQUIRED IN NEXT 16
 
-    const updated = await prisma.driver.update({
-      where: { id },
-      data: { approved: true }
+    const driverId = parseInt(id, 10);
+
+    await prisma.driver.update({
+      where: { id: driverId },
+      data: { approved: true },
     });
 
-    return Response.json({ success: true, driver: updated });
+    return Response.json({ success: true });
   } catch (err) {
-    console.error("APPROVE ERROR:", err);
-    return Response.json({ error: "Approve failed" }, { status: 500 });
+    console.error("APPROVE DRIVER ERROR:", err);
+    return Response.json(
+      { error: "Failed to approve driver" },
+      { status: 500 }
+    );
   }
 }
