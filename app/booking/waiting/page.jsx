@@ -7,7 +7,7 @@ import { Suspense } from "react";
 export default function BookingWaitingPage() {
   const router = useRouter();
   <Suspense fallback={<div>Loading...</div>}>
-  const searchParams = useSearchParams();
+    const searchParams = useSearchParams();
   </Suspense>
   const bookingId = searchParams.get("bookingId");
 
