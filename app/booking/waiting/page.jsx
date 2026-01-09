@@ -3,10 +3,13 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function BookingWaitingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  <Suspense fallback={<div>Loading...</div>}>
+    const searchParams = useSearchParams();
+  </Suspense>
   const bookingId = searchParams.get("bookingId");
 
   const [booking, setBooking] = useState(null);
